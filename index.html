@@ -322,76 +322,6 @@
                 transform: translateX(-50%);
             }
         }
-
-        /* NEW: Profile View Styles */
-        .profile-card {
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .profile-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            background: rgba(30, 41, 59, 0.9);
-            border-color: var(--primary);
-            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
-        }
-
-        .profile-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, transparent, var(--primary), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .profile-card:hover::before {
-            opacity: 1;
-        }
-
-        .profile-stat-bar {
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            width: 100%;
-            margin-top: 10px;
-            overflow: hidden;
-        }
-
-        .profile-stat-fill {
-            height: 100%;
-            border-radius: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            width: 0%;
-            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .view-transition {
-            animation: viewFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @keyframes viewFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
     </style>
 </head>
 
@@ -678,25 +608,9 @@
                     </div>
                 </div>
             </div>
-        </div> <!-- End view-dashboard -->
-
-        <!-- View 2: Detailed Profiles (Hidden by default) -->
-        <div id="view-profiles" class="hidden w-full transition-all duration-500">
-            <div class="text-center mb-10 pt-4">
-                <h2 class="text-4xl font-bold text-white mb-2 font-heading">Visão Geral da Equipe</h2>
-                <p class="text-indigo-300 text-lg">Performance detalhada em tempo real</p>
-            </div>
-            <!-- Controls for View 2 -->
-            <div class="flex justify-center mb-8">
-                <div class="glass-panel px-6 py-2 rounded-full text-sm text-gray-400">
-                    <i class="fas fa-sync-alt animate-spin mr-2 text-indigo-500"></i> Atualizando automaticamente
-                </div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
-                id="profilesGrid">
-                <!-- Cards will be injected here -->
-            </div>
         </div>
+
+
 
         </div>
     </main>
@@ -851,12 +765,9 @@
                 rawData: [],
                 voiceEnabled: false,
                 previousRankings: new Map(),
-                filiais: new Set(),
-                currentView: 'dashboard',
-                viewRotationInterval: null,
-                viewRotationTime: 60000, // 60 seconds
-                lastSwitchTime: 0
+                filiais: new Set()
             };
+
 
             function initWiFiSymbol() {
                 const container = elements.wifiContainer;
@@ -1301,94 +1212,7 @@
                 updateStats(state.configurationsData, currentTotal);
                 setupCarousel();
                 updateTechniciansList();
-                updateProfilesView(); // Populate the profiles view
                 fireConfettiForTop3();
-            }
-
-            // *** NEW: View Rotation Logic ***
-            function startViewRotation() {
-                if (state.viewRotationInterval) clearInterval(state.viewRotationInterval);
-
-                // Switch every minute
-                state.viewRotationInterval = setInterval(() => {
-                    switchView();
-                }, state.viewRotationTime);
-            }
-
-            function switchView() {
-                const dashboard = document.getElementById('view-dashboard');
-                const profiles = document.getElementById('view-profiles');
-
-                if (!dashboard || !profiles) return;
-
-                if (state.currentView === 'dashboard') {
-                    // Switch to profiles
-                    dashboard.classList.add('hidden');
-                    profiles.classList.remove('hidden');
-                    profiles.classList.add('view-transition');
-                    state.currentView = 'profiles';
-                } else {
-                    // Switch to dashboard
-                    profiles.classList.add('hidden');
-                    dashboard.classList.remove('hidden');
-                    dashboard.classList.add('view-transition');
-                    state.currentView = 'dashboard';
-                }
-            }
-
-            function updateProfilesView() {
-                const grid = document.getElementById('profilesGrid');
-                if (!grid) return;
-
-                grid.innerHTML = '';
-
-                state.techniciansData.forEach((tech, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'profile-card glass-card';
-                    card.style.animationDelay = `${index * 0.05}s`; // Staggered animation
-
-                    // Rank badge
-                    const rank = index + 1;
-                    let rankColor = 'bg-gray-700 text-gray-300';
-                    if (rank === 1) rankColor = 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/50';
-                    if (rank === 2) rankColor = 'bg-gray-300 text-gray-800 shadow-lg shadow-gray-300/50';
-                    if (rank === 3) rankColor = 'bg-orange-500 text-white shadow-lg shadow-orange-500/50';
-
-                    // Calculate percentage relative to leader
-                    const leaderCount = state.techniciansData[0].count || 1;
-                    const percent = Math.round((tech.count / leaderCount) * 100);
-
-                    card.innerHTML = `
-                        <div class="absolute top-4 right-4 ${rankColor} w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm z-10">
-                            ${rank}
-                        </div>
-                        
-                        <div class="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white mb-4 shadow-lg border-2 border-white/10"
-                             style="background-color: ${getRandomColor(tech.name)}">
-                            ${getInitials(tech.name)}
-                        </div>
-                        
-                        <h3 class="text-white font-bold text-lg text-center leading-tight mb-1 truncate w-full" title="${tech.name}">
-                            ${tech.name}
-                        </h3>
-                        
-                        <div class="text-indigo-300 text-sm font-medium mb-4">
-                            ${tech.count} Configurações
-                        </div>
-                        
-                        <div class="w-full mt-auto">
-                            <div class="flex justify-between text-xs text-gray-500 mb-1">
-                                <span>Performance</span>
-                                <span>${percent}%</span>
-                            </div>
-                            <div class="profile-stat-bar">
-                                <div class="profile-stat-fill" style="width: ${percent}%"></div>
-                            </div>
-                        </div>
-                    `;
-
-                    grid.appendChild(card);
-                });
             }
 
             function fillPodiumSpot(nameEl, countEl, avatarEl, tech) {
@@ -1454,11 +1278,6 @@
 
 
                 state.updateInterval = setTimeout(loadData, 5 * 60 * 1000);
-
-                // Start View Rotation if not already started
-                if (!state.viewRotationInterval) {
-                    startViewRotation();
-                }
             }
 
             function updateTimerDisplay(seconds) {
